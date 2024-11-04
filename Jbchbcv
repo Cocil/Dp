@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divine Abomination</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #1a1a1a; color: #eaeaea; }
+        h1 { color: #ff6f61; text-align: center; }
+        #chatBox { max-height: 400px; overflow-y: scroll; border: 1px solid #444; padding: 10px; margin-bottom: 10px; background: #333; }
+        .message { margin: 5px 0; padding: 5px; border-radius: 5px; }
+        .user { color: #61dafb; }
+        .ai { color: #98fb98; }
+        #userInput { width: 100%; padding: 10px; background: #222; color: #fff; border: 1px solid #444; }
+        button { padding: 10px; margin: 5px; border: none; background: #ff6f61; color: white; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #ff8f81; }
+        #controls { display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <h1>Divine Abomination</h1>
+    <div id="chatBox"></div>
+    <input type="text" id="userInput" placeholder="Describe your game here..." />
+    <div id="controls">
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="generateGame()">Generate Game</button>
+        <button onclick="clearChat()">Clear Chat</button>
+        <button onclick="toggleLearningMode()">Toggle Learning Mode</button>
+    </div>
+
+    <script>
+        const apiKey = "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";  // Replace with your actual API key
+        let learningMode = false;
+
+        async function sendMessage() {
+            const userMessage = document.getElementById("userInput").value;
+            if (!userMessage) return;
+            appendMessage("user", userMessage);
+
+            // Clear input box
+            document.getElementById("userInput").value = "";
+
+            try {
+                const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4",
+                        messages: [{ role: "user", content: userMessage }],
+                        max_tokens: 700,
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await response.json();
+                const aiMessage = data.choices[0].message.content;
+                appendMessage("ai", aiMessage);
+
+                // Text-to-Speech for AI response
+                speak(aiMessage);
+
+                // If learning mode is on, log conversation
+                if (learningMode) {
+                    logLearning(userMessage, aiMessage);
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                appendMessage("ai", "Divine: Sorry, there was an error connecting to the API.");
+            }
+        }
+
+        async function generateGame() {
+            const gameDescription = document.getElementById("userInput").value;
+            if (!gameDescription) return;
+            appendMessage("user", "Generating a game based on: " + gameDescription);
+
+            try {
+                // Request AI-generated game code based on description
+                const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4",
+                        messages: [{ role: "user", content: `Generate a game with the following description: ${gameDescription}` }],
+                        max_tokens: 1500,
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await response.json();
+                const gameCode = data.choices[0].message.content;
+
+                // Trigger file download for generated game code
+                downloadFile(gameCode, "GeneratedGame.html");
+
+                appendMessage("ai", "Divine: Game code created based on your description. Check your downloads.");
+
+            } catch (error) {
+                console.error("Error:", error);
+                appendMessage("ai", "Divine: Could not generate the game.");
+            }
+        }
+
+        function appendMessage(sender, message) {
+            const messageElement = document.createElement("div");
+            messageElement.className = `message ${sender}`;
+            messageElement.innerText = (sender === "user" ? "You: " : "Divine: ") + message;
+            document.getElementById("chatBox").appendChild(messageElement);
+            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+        }
+
+        function clearChat() {
+            document.getElementById("chatBox").innerHTML = "";
+        }
+
+        function toggleLearningMode() {
+            learningMode = !learningMode;
+            appendMessage("ai", learningMode ? "Learning Mode is now ON." : "Learning Mode is now OFF.");
+        }
+
+        function downloadFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function logLearning(userInput, aiResponse) {
+            console.log("Learning Session Log:");
+            console.log("User Input:", userInput);
+            console.log("Divine's Response:", aiResponse);
+            // Placeholder for saving or enhancing Divine's knowledge
+        }
+
+        function speak(text) {
+            const speech = new SpeechSynthesisUtterance(text);
+            speech.lang = "en-US";
+            window.speechSynthesis.speak(speech);
+        }
+    </script>
+</body>
+</html>
