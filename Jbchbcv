@@ -27,9 +27,7 @@
         <button onclick="clearChat()">Clear Chat</button>
         <button onclick="toggleLearningMode()">Toggle Learning Mode</button>
     </div>
-
-    <script>
-        const apiKey = "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";  // Replace with your actual API key
+ 
         let learningMode = false;
 
         async function sendMessage() {
